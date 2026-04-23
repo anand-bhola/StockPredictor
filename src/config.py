@@ -8,7 +8,6 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, Optional
 import yaml
-from pydantic import BaseSettings
 
 logger = logging.getLogger(__name__)
 
