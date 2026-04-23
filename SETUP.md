@@ -3,12 +3,12 @@
 ## Quick Start
 
 ### 1. Prerequisites
-Ensure you have Python 3.8+ installed. If not, download from https://www.python.org/
+Ensure you have Python 3.11+ installed. If not, download from https://www.python.org/
 
 ### 2. Install Dependencies
 
 ```bash
-cd c:\Users\anand\Repos\StockPrediction
+cd D:\StockPredictor
 python -m venv venv
 .\venv\Scripts\activate
 pip install -r requirements.txt
@@ -53,11 +53,11 @@ python app.py health
 
 ### Windows
 
-1. **Install Python 3.10+** from https://www.python.org/downloads/
+1. **Install Python 3.11+** from https://www.python.org/downloads/
 
 2. **Clone the repository**
    ```powershell
-   cd c:\Users\anand\Repos\StockPrediction
+   cd D:\StockPredictor
    ```
 
 3. **Create virtual environment**
