@@ -1,0 +1,86 @@
+# Application Settings
+app:
+  name: Stock Predictor
+  version: 1.0.0
+  debug: false
+
+# Database
+database:
+  path: ./data/stock_predictor.db
+  max_connections: 5
+
+# LLM Configuration
+llm:
+  provider: openai
+  model: gpt-3.5-turbo
+  api_key: ${OPENAI_API_KEY}  # Set via environment variable
+  temperature: 0.3
+  max_tokens: 500
+
+# News & Sentiment Configuration
+news:
+  # Update interval in minutes
+  update_interval: 10
+  # RSS feed sources
+  rss_feeds:
+    - url: https://feeds.cnbc.com/cnbcnews
+      name: CNBC
+    - url: https://feeds.reuters.com/finance/markets
+      name: Reuters Markets
+    - url: https://feeds.marketwatch.com/marketwatch/topstories/
+      name: MarketWatch
+  # Stock news scrape sources (using keywords)
+  scrape_sources:
+    - url: https://finance.yahoo.com
+      name: Yahoo Finance
+  # Number of articles to fetch per cycle
+  articles_per_cycle: 50
+  # Article age threshold (hours) - only process news within this window
+  max_article_age_hours: 24
+
+# Technical Analysis Configuration
+technical:
+  # Lookback period for technical indicators (in candles)
+  lookback_period: 100
+  # Standard technical indicators to compute
+  indicators:
+    - RSI
+    - MACD
+    - Bollinger Bands
+    - SMA 20
+    - SMA 50
+    - SMA 200
+    - EMA 12
+  # Normalization parameters
+  normalize: true
+  normalize_range: [0, 1]
+
+# LSTM Model Configuration
+lstm:
+  # Architecture parameters
+  layers: 3
+  units_per_layer: [128, 64, 32]
+  dropout_rate: 0.2
+  # Training parameters
+  lookback_window: 20
+  batch_size: 32
+  epochs: 50
+  validation_split: 0.2
+  early_stopping_patience: 5
+  # Model path
+  model_dir: ./data/models
+
+# Price Prediction Configuration
+prediction:
+  # Target prediction window (in minutes)
+  window_minutes: 5
+  # Minimum confidence threshold for predictions
+  min_confidence: 0.5
+  # Retraining frequency (days)
+  retrain_interval_days: 7
+
+# Logging
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: ./logs/stock_predictor.log

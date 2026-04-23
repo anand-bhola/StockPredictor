@@ -1,0 +1,41 @@
+# Stock symbols to monitor and their sectors
+stocks:
+  - symbol: AAPL
+    sector: Technology
+  - symbol: MSFT
+    sector: Technology
+  - symbol: GOOGL
+    sector: Technology
+  - symbol: TSLA
+    sector: Automotive
+  - symbol: JPM
+    sector: Financials
+  - symbol: XOM
+    sector: Energy
+  - symbol: JNJ
+    sector: Healthcare
+  - symbol: PG
+    sector: Consumer Staples
+  - symbol: V
+    sector: Financials
+  - symbol: WMT
+    sector: Consumer Staples
+
+# Sector definitions (for sentiment aggregation)
+sectors:
+  Technology:
+    - AAPL
+    - MSFT
+    - GOOGL
+  Automotive:
+    - TSLA
+  Financials:
+    - JPM
+    - V
+  Energy:
+    - XOM
+  Healthcare:
+    - JNJ
+  Consumer Staples:
+    - PG
+    - WMT
