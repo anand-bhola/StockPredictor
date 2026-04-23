@@ -5,7 +5,7 @@ Fetches financial news from RSS feeds and web scraping.
 
 import logging
 import feedparser
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Optional
 import requests
 from bs4 import BeautifulSoup
@@ -101,7 +101,7 @@ class NewsFetcher:
 
     def _filter_by_age(self, articles: List[Dict]) -> List[Dict]:
         """Filter articles older than max_age_hours."""
-        cutoff_time = datetime.now() - timedelta(hours=self.max_age_hours)
+        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=self.max_age_hours)
         filtered = []
 
         for article in articles:
@@ -158,13 +158,16 @@ class NewsFetcher:
 
         for fmt in formats:
             try:
-                return datetime.strptime(date_str.replace('GMT', '+0000'), fmt)
+                parsed = datetime.strptime(date_str.replace('GMT', '+0000'), fmt)
+                if parsed.tzinfo is None:
+                    return parsed.replace(tzinfo=timezone.utc)
+                return parsed
             except ValueError:
                 continue
 
         # Fallback to current time if parsing fails
         logger.debug(f"Could not parse date: {date_str}")
-        return datetime.now()
+        return datetime.now(timezone.utc)
 
     def fetch_yahoo_finance_news(self, stock_symbol: str) -> List[Dict]:
         """

@@ -124,9 +124,7 @@ class StockPredictorIntegrator:
             sectors: List of sectors to update (None = all)
         """
         if sectors is None:
-            sectors = set(self.config_loader.config.get('stocks', {}).__class__.__dict__.get('sectors', {}).keys())
-            if not sectors:
-                sectors = list(set(self.config_loader.config.get('sectors', {}).keys()))
+            sectors = list(self.config_loader.sectors.keys())
 
         logger.info(f"Updating sentiment for {len(sectors)} sectors")
 
