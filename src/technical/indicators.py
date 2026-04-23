@@ -6,8 +6,8 @@ Computes standard technical indicators like RSI, MACD, Bollinger Bands, moving a
 import logging
 import numpy as np
 import pandas as pd
+import pandas_ta as ta
 from typing import Dict, List, Optional, Tuple
-from ta import momentum, trend, volatility, volume
 
 logger = logging.getLogger(__name__)
 
@@ -49,45 +49,39 @@ class TechnicalIndicators:
         try:
             # RSI (Relative Strength Index)
             if 'RSI' in self.indicators:
-                df['RSI'] = momentum.rsi(df['close'], window=14)
+                df['RSI'] = ta.rsi(df['close'], length=14)
 
             # MACD (Moving Average Convergence Divergence)
             if 'MACD' in self.indicators:
-                macd = trend.macd(df['close'], window_fast=12, window_slow=26, window_sign=9)
-                df['MACD'] = macd
-                df['MACD_Signal'] = trend.macd_signal(df['close'], window_fast=12, window_slow=26, window_sign=9)
-                df['MACD_Diff'] = trend.macd_diff(df['close'], window_fast=12, window_slow=26, window_sign=9)
+                macd_result = ta.macd(df['close'], fast=12, slow=26, signal=9)
+                df = df.join(macd_result)
 
             # Bollinger Bands
             if 'Bollinger Bands' in self.indicators:
-                bb_high = volatility.bollinger_hband(df['close'], window=20, window_dev=2)
-                bb_low = volatility.bollinger_lband(df['close'], window=20, window_dev=2)
-                bb_mid = volatility.bollinger_mavg(df['close'], window=20)
-                df['BB_High'] = bb_high
-                df['BB_Mid'] = bb_mid
-                df['BB_Low'] = bb_low
+                bb = ta.bbands(df['close'], length=20, std=2)
+                df = df.join(bb)
 
             # Simple Moving Averages
             if 'SMA 20' in self.indicators:
-                df['SMA_20'] = df['close'].rolling(window=20).mean()
+                df['SMA_20'] = ta.sma(df['close'], length=20)
             if 'SMA 50' in self.indicators:
-                df['SMA_50'] = df['close'].rolling(window=50).mean()
+                df['SMA_50'] = ta.sma(df['close'], length=50)
             if 'SMA 200' in self.indicators:
-                df['SMA_200'] = df['close'].rolling(window=200).mean()
+                df['SMA_200'] = ta.sma(df['close'], length=200)
 
             # Exponential Moving Averages
             if 'EMA 12' in self.indicators:
-                df['EMA_12'] = df['close'].ewm(span=12, adjust=False).mean()
+                df['EMA_12'] = ta.ema(df['close'], length=12)
             if 'EMA 26' in self.indicators:
-                df['EMA_26'] = df['close'].ewm(span=26, adjust=False).mean()
+                df['EMA_26'] = ta.ema(df['close'], length=26)
 
             # Additional useful indicators
             # ATR (Average True Range)
-            df['ATR'] = self._calculate_atr(df)
+            df['ATR'] = ta.atr(df['high'], df['low'], df['close'], length=14)
 
             # Volume indicators
             if 'volume' in df.columns:
-                df['SMA_Volume'] = df['volume'].rolling(window=20).mean()
+                df['SMA_Volume'] = ta.sma(df['volume'], length=20)
 
             logger.debug(f"Computed {len(df.columns)} indicator columns")
 
