@@ -9,6 +9,15 @@ from datetime import datetime
 import json
 import openai
 
+try:
+    from openai.error import RateLimitError, AuthenticationError, OpenAIError
+except ImportError:
+    try:
+        from openai import OpenAIError
+    except ImportError:
+        OpenAIError = Exception
+    RateLimitError = AuthenticationError = OpenAIError
+
 logger = logging.getLogger(__name__)
 
 
@@ -132,14 +141,17 @@ Respond ONLY with a valid JSON object (no markdown, no additional text) in this 
                 # Fallback parsing
                 return self._parse_sentiment_fallback(response_text)
 
-        except openai.error.RateLimitError:
+        except RateLimitError:
             logger.warning("OpenAI rate limit hit, using fallback sentiment")
             return self._fallback_sentiment()
-        except openai.error.AuthenticationError:
+        except AuthenticationError:
             logger.error("OpenAI authentication failed. Check API key.")
             return self._fallback_sentiment()
-        except Exception as e:
+        except OpenAIError as e:
             logger.error(f"OpenAI API error: {e}")
+            return self._fallback_sentiment()
+        except Exception as e:
+            logger.error(f"Unexpected OpenAI error: {e}")
             return self._fallback_sentiment()
 
     def _parse_sentiment_fallback(self, text: str) -> Dict:

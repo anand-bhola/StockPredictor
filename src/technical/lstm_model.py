@@ -10,16 +10,6 @@ from pathlib import Path
 import pickle
 import os
 
-try:
-    import tensorflow as tf
-    from tensorflow import keras
-    from tensorflow.keras import layers
-    TENSORFLOW_AVAILABLE = True
-except ImportError:
-    TENSORFLOW_AVAILABLE = False
-    logger = logging.getLogger(__name__)
-    logger.warning("TensorFlow not installed. LSTM training will be unavailable.")
-
 logger = logging.getLogger(__name__)
 
 
@@ -41,41 +31,70 @@ class LSTMModel:
         self.history = None
         self.is_trained = False
 
+        # Delay model building/loading until first use
+        self._model_initialized = False
+
         if model_path and os.path.exists(model_path):
-            self.load_model(model_path)
+            # We'll load the model later when needed
+            self._pending_model_path = model_path
         else:
-            self._build_model()
+            self._pending_model_path = None
+
+    def _ensure_model(self):
+        """Ensure the model is built or loaded before use."""
+        if not self._model_initialized:
+            if self._pending_model_path:
+                self.load_model(self._pending_model_path)
+            else:
+                self._build_model()
+            self._model_initialized = True
+
+
+    def _ensure_tensorflow(self):
+        """Ensure TensorFlow is imported when needed."""
+        if not hasattr(self, '_tensorflow_imported'):
+            try:
+                import tensorflow as tf
+                from tensorflow import keras
+                from tensorflow.keras import layers
+                self.tf = tf
+                self.keras = keras
+                self.layers = layers
+                self._tensorflow_imported = True
+                # Configure TensorFlow to use less verbose logging
+                tf.get_logger().setLevel('ERROR')
+                os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+            except ImportError:
+                raise ImportError("TensorFlow is required for LSTM model functionality")
 
     def _build_model(self):
         """Build LSTM architecture."""
-        if not TENSORFLOW_AVAILABLE:
-            logger.error("TensorFlow required for LSTM model")
-            return
+        self._ensure_tensorflow()
 
         try:
             units_per_layer = self.lstm_config.get('units_per_layer', [128, 64, 32])
             dropout_rate = self.lstm_config.get('dropout_rate', 0.2)
 
-            model = keras.Sequential()
+            model = self.keras.Sequential()
 
             # LSTM layers
             for i, units in enumerate(units_per_layer):
                 return_sequences = i < len(units_per_layer) - 1
-                model.add(layers.LSTM(
+                model.add(self.layers.LSTM(
                     units=units,
                     return_sequences=return_sequences,
                     activation='relu'
                 ))
                 if dropout_rate > 0:
-                    model.add(layers.Dropout(dropout_rate))
+                    model.add(self.layers.Dropout(dropout_rate))
 
             # Output layer (predicts low and high prices)
-            model.add(layers.Dense(64, activation='relu'))
-            model.add(layers.Dense(2))  # Output: [predicted_low, predicted_high]
+            model.add(self.layers.Dense(64, activation='relu'))
+            model.add(self.layers.Dense(2))  # Output: [predicted_low, predicted_high]
 
             # Compile
             model.compile(
-                optimizer=keras.optimizers.Adam(learning_rate=0.001),
+                optimizer=self.keras.optimizers.Adam(learning_rate=0.001),
                 loss='mse',
                 metrics=['mae']
             )
@@ -102,13 +121,13 @@ class LSTMModel:
         Returns:
             Training history or None if error
         """
+        self._ensure_model()
+
         if self.model is None:
             logger.error("Model not initialized")
             return None
 
-        if not TENSORFLOW_AVAILABLE:
-            logger.error("TensorFlow required for training")
-            return None
+        self._ensure_tensorflow()
 
         try:
             # Convert to numpy arrays
@@ -129,7 +148,7 @@ class LSTMModel:
             logger.info(f"Input shape: {X_train.shape}")
 
             # Early stopping
-            early_stopping = keras.callbacks.EarlyStopping(
+            early_stopping = self.keras.callbacks.EarlyStopping(
                 monitor='val_loss',
                 patience=self.lstm_config.get('early_stopping_patience', 5),
                 restore_best_weights=True
@@ -175,6 +194,8 @@ class LSTMModel:
         Returns:
             Tuple of (predicted_low, predicted_high) or None if error
         """
+        self._ensure_model()
+
         if self.model is None:
             logger.error("Model not initialized")
             return None
@@ -223,6 +244,8 @@ class LSTMModel:
 
     def save_model(self, model_path: str):
         """Save model to disk."""
+        self._ensure_model()
+
         if self.model is None:
             logger.warning("No model to save")
             return
@@ -251,17 +274,17 @@ class LSTMModel:
 
     def load_model(self, model_path: str):
         """Load model from disk."""
+        self._ensure_model()
+
         try:
             model_file = Path(model_path) / 'model.h5'
             metadata_file = Path(model_path) / 'metadata.pkl'
 
-            if not TENSORFLOW_AVAILABLE:
-                logger.error("TensorFlow required to load model")
-                return
+            self._ensure_tensorflow()
 
             # Load Keras model
             if model_file.exists():
-                self.model = keras.models.load_model(str(model_file))
+                self.model = self.keras.models.load_model(str(model_file))
                 logger.info(f"Model loaded from {model_file}")
             else:
                 logger.warning(f"Model file not found: {model_file}")
